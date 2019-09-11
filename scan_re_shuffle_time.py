@@ -12,39 +12,39 @@ from matplotlib.patches import Polygon
 
 np.set_printoptions(threshold=np.nan)
 
-pd.set_option('display.width', 1000)  # 设置字符显示宽度
-pd.set_option('display.max_rows', None)  # 设置显示最大行
-pd.set_option('display.max_columns', None)  # 设置显示最大行
+pd.set_option('display.width', 1000)  # Set the character display width
+pd.set_option('display.max_rows', None)  # Set display maximum line
+pd.set_option('display.max_columns', None)  # Set display maximum line
 
 
 def space_cluster(df1, R_max ,distance):
     m, n = df1.shape
     print('m', 'n', m, n)
-    # 计算空间聚集区域
+    # Computing space aggregation area
     for i in range(m):
         for k in range(m):
             # print(d[i][k])
-            if (distance[i][k] <= R_max):  # 当两个地点的距离小于最大半径的时候，以i为圆心，k为半径画圆
+            if (distance[i][k] <= R_max):  # When the distance between the two locations is less than the maximum radius, draw the circle with i as the center and k as the radius.
                 c = {}
                 c["center_xbid"] = i + 1
                 c["r"] = distance[i][k]
-                xbid = []  # 数组存储下标
+                xbid = []  # Array storage subscript
 
                 # print(d[i][k])
-                for v in range(m):  # 当以i为圆心，k为半径画圆, 判断在圆内的地点，存储下标集合
+                for v in range(m):  # When i is the center of the circle and k is the radius, draw a circle, and judge the location within the circle to store the subscript set.
                     # print(d[i][v])
                     if (distance[i][k] >= distance[i][v]):
                         if (i != k):
-                            xbid.append(v + 1)  # 空间聚类集合
+                            xbid.append(v + 1)  # Spatial clustering set
                         else:
-                            xbid.append(i + 1)  # 只存储圆心
+                            xbid.append(i + 1)  # Store only the center of the circle
                     else:
                         continue
 
                 #if i == 170:
                    # print('xbid-171', xbid)
                 c["xbids"] = xbid
-                circle.append(c)  # 存储形式 [{ }{ }{ }]
+                circle.append(c)  # Storage form [{ }{ }{ }]
             else:
                 continue
     # print(circle)
@@ -53,12 +53,12 @@ def space_cluster(df1, R_max ,distance):
 
 # print(circle)
 # print(circle)
-def scan(case, circle, zdsjc, U, topN, day):  # 扫描结果计算函数
+def scan(case, circle, zdsjc, U, topN, day):  # Scan result calculation function
 
-    C = copy.deepcopy(case)  # 事件矩阵
-    circle = copy.deepcopy(circle)  # 中心半径以及空间簇记录列表
-    T_max = copy.deepcopy(zdsjc)  # 最大时间簇
-    U = copy.deepcopy(U)  # 期望矩阵
+    C = copy.deepcopy(case)  # Event matrix
+    circle = copy.deepcopy(circle)  # Center radius and space cluster record list
+    T_max = copy.deepcopy(zdsjc)  # Maximum time cluster
+    U = copy.deepcopy(U)  # Expectation matrix
     # print('c',C)
     # print('type(U)',type(U))
     # day = 7
@@ -69,7 +69,7 @@ def scan(case, circle, zdsjc, U, topN, day):  # 扫描结果计算函数
         # print(T_cluster)
         circle1 = copy.deepcopy(circle)
         for i in range(len(circle1)):
-            circle1[i]["T_cluster"] = T_cluster + 1  # 时间簇
+            circle1[i]["T_cluster"] = T_cluster + 1  # Time cluster
             circle1[i]["C_zd"] = ""
             circle1[i]["u_zd"] = ""
             C_zd = 0
@@ -87,11 +87,11 @@ def scan(case, circle, zdsjc, U, topN, day):  # 扫描结果计算函数
             u_zd = float(u_zd)
             # print("C_zd:{}".format(C_zd))
             if C_zd <= u_zd:
-                LGLR = 0  # 实际病例小于预期，正常不警告
+                LGLR = 0  # Actual case is less than expected, normal no warning
             else:
                 LGLR = C_zd * math.log(C_zd / u_zd) + (C_sum - C_zd) * math.log(
-                    (C_sum - C_zd) / (C_sum - u_zd))  # 计算似然比
-            circle1[i]["LGLR"] = LGLR  # circle1[i]中添加似然比key
+                    (C_sum - C_zd) / (C_sum - u_zd))  # Calculating the likelihood ratio
+            circle1[i]["LGLR"] = LGLR  # Add likelihood ratio key to circle1[i]
             circle1[i]["C_zd"] = C_zd
             circle1[i]["u_zd"] = u_zd
         # a = "cir"+ str(T_cluster)
@@ -108,23 +108,23 @@ def scan(case, circle, zdsjc, U, topN, day):  # 扫描结果计算函数
     # print(cir)
     # T_cluster += 1
     # print(cir)
-    # sorted_cir = sorted(cir, key=operator.itemgetter("LGLR"),reverse=True)   # 先对LGLR从大到小排序
+    # sorted_cir = sorted(cir, key=operator.itemgetter("LGLR"),reverse=True)   # Sort LGLR from big to small first
 
-    ### 转 df --》 -- 》 去除r = 0 ,LGLR = 0 --》 排序 --》 同值去重 --》 转list
+    ### Turn df --" -- 》 remove r = 0, LGLR = 0 --" Sort -- " Same value to weight --"
     df_cir = pd.DataFrame(cir)
 
-    # 首先根据 LGLR排序，然后再按照r进行排序
+    # First sort by LGLR, then sort by r
     df_cir = df_cir.sort_index(axis=0, ascending=[False, True], by=['LGLR', 'r'])
 
-    # 删除 LGLR  r 为 0 的行
-    ### df_cir = df_cir[~df_cir['LGLR'].isin([0])]  # 会产生空集
+    # Delete the line with LGLR r 0
+    ### df_cir = df_cir[~df_cir['LGLR'].isin([0])]  # Will produce an empty set
     ### df_cir = df_cir[~df_cir['r'].isin([0])]
-    # 去重，重复的只取 第一个
-    #   df_cir = df_cir.drop_duplicates(subset=['LGLR'],keep='first')    #  似然比从大到小排序后，相等的似然比其半径从小到大排序，留下第一个删除剩下的
+    # The data is deduplicated, and only the first one is repeated.
+    #   df_cir = df_cir.drop_duplicates(subset=['LGLR'],keep='first')    #  After the likelihood ratio is sorted from large to small, the equal likelihood is sorted from its small to large radius, leaving the first one to delete the rest.
     #   df_cir = df_cir.drop_duplicates(subset=['r'], keep='first')
     #   df_cir = df_cir.reset_index(drop=True)
 
-    ## 去重,去除第一个聚集圈内包含的点
+    ## Data is deduplicated to remove points contained in the first gathering circle
     f2 = df_cir.iloc[[0]]
     xb = f2.center_xbid.tolist()
 
@@ -159,11 +159,11 @@ def scan(case, circle, zdsjc, U, topN, day):  # 扫描结果计算函数
                 df_cir.drop(index, axis=0, inplace=True)
 
 
-    df_cir = df_cir.drop_duplicates(subset=['LGLR'], keep='first')  # 似然比从大到小排序后，相等的似然比其半径从小到大排序，留下第一个删除剩下的
+    df_cir = df_cir.drop_duplicates(subset=['LGLR'], keep='first')  # After the likelihood ratio is sorted from large to small, the equal likelihood is sorted from its small to large radius, leaving the first one to delete the rest.
     # = df_cir.drop_duplicates(subset=['r'], keep='first')
     df_cir = df_cir.reset_index(drop=True)
 
-    # 取10个元素
+    # Take 10 elements
     df_cir = df_cir.iloc[0:10]
     # print('df_cir',df_cir)
     # df_cir = df_cir.tolist()
@@ -171,8 +171,7 @@ def scan(case, circle, zdsjc, U, topN, day):  # 扫描结果计算函数
     # df_cir = df_cir.tolist()  # list
     # print(df_cir)
     return df_cir
-    # 去重
-
+    # deduplicated
 
 # df_cir = df_cir.drop_duplicates(['L'])
 # print(df_cir)
@@ -180,16 +179,16 @@ def scan(case, circle, zdsjc, U, topN, day):  # 扫描结果计算函数
 
 # sorted_cir = sorted(cir,key = lambda  r: r['LGLR'],reverse=True)
 # print(sorted_cir)
-# sorted_cir = sorted(sorted_cir,key = operator.itemgetter("r"))  # 接着按照r从小到大排序
+# sorted_cir = sorted(sorted_cir,key = operator.itemgetter("r"))  # Then sort by r from small to large
 # print(sorted_cir)
 # print("sorted_cir")
 # print(sorted_cir)
 # print(sorted_cir)
 # if topN < len(sorted_cir):
-#     sorted_cir = sorted_cir[:topN]   # 取排序后数组的前topN个元素
+#     sorted_cir = sorted_cir[:topN]   # Take the top topN elements of the sorted array
 # return sorted_cir
 
-# Knuth-Durstenfeld Shuffle   算法
+# Knuth-Durstenfeld Shuffle   algorithm
 def randpermBySYB(p1):
     p = copy.copy(p1)
     p = np.array(p)
@@ -197,18 +196,18 @@ def randpermBySYB(p1):
     # print(p.shape[0])
     n = np.size(p)
     # print(n)
-    # if np.size(p,0)==1:    # 判断是行矩阵
+    # if np.size(p,0)==1:    # Judgment is a row matrix
     for i in range(n):
         # print('i',i)
-        j = np.random.randint(n - i)  # 产生1到n-1范围内伪随机整数
+        j = np.random.randint(n - i)  # Generate pseudo-random integers in the range 1 to n-1
         # print('j',j)
         tmp = p[i + j]
         p[i + j] = p[i]
-        p[i] = tmp  # 交换数据
+        p[i] = tmp  # Exchange data
     return p
 
 
-## 随机重排
+## Random rearrangement
 def shuffle(v):
     v = np.array(v)
     # print(v[0])
@@ -220,21 +219,21 @@ def shuffle(v):
     return v
 
 if __name__ == '__main__':
-    # 获取距离
+    # Getting distance
     df3 =pd.DataFrame(pd.read_csv(r'.\data\distance_jjs.csv'))
-    # 距离得到二维array
+    # Distance to get two-dimensional array
     distance = df3.values
-    # 删除二维数组第一列 np.delete(dataset,  Row/Column , axis=1)  axis 1列 0行
+    # Delete the first column of the two-dimensional array np.delete(dataset, Row/Column, axis=1) axis 1 column 0 rows
     distance = np.delete(distance, 0, 1)
 
-    #  地址文件地址
+    #  Address file address
     data_dz = r"data\city_jjs.csv"
-    #  案例数文件地址
+    #  Case number file address
     data_case = r"data\jjs_text2.csv"
 
-    # 读取地点文件
+    # Read location file
     df1 = pd.DataFrame(pd.read_csv(data_dz))
-    # 读取case发生文件
+    # Read case file
     df2 = pd.DataFrame(pd.read_csv(data_case))
 
     # print(df2.date)
@@ -242,34 +241,32 @@ if __name__ == '__main__':
     print(df1)
     print(df2)
 
-    # m 总的参考地址数
+    # m Total number of reference addresses
     m, n = df1.shape
     # print(m)
-    # 初始化
-    R_max = 6  # 最大半径
-    T_max = 3  # 最大时间簇
-    # day = 7    # 参考天数
-    topN = 10  # 取GLR前10
-    # xbid = []         # 存储空间簇下标
-    space_xbis = []  # 存储所有空间簇
-    # c = {}           # 字典存放画圆数据，圆心、半径、圆内空间聚集包含地址
-    circle = []  # 存储每个扫描窗口的圆心、半径和空间下标聚合集
+    # initialization
+    R_max = 6  # Maximum radius
+    T_max = 3  # Maximum time cluster
+    # day = 7    # Reference days
+    topN = 10  # Take the top 10 GLR
+    # xbid = []         # Storage space cluster subscript
+    space_xbis = []  # Store all space clusters
+    # c = {}           # The dictionary stores the circle data, and the center of the circle, the radius, and the space within the circle contain the address.
+    circle = []  # Stores the center, radius, and space subscript aggregates for each scan window
 
-    starttime = "2018/2/1 0:00:00"  # 开始时间
-    endtime = "2018/2/7 23:59:59"  # 结束时间
+    starttime = "2018/2/1 0:00:00"  # Starting time
+    endtime = "2018/2/7 23:59:59"  # End Time
 
-    # starttime = "2018/1/1 0:00:00"  # 开始时间
-    # endtime = "2018/1/5 0:00:00"  # 结束时间
     # starttime = time.mktime(time.strptime(starttime, '%Y-%m-%d %H:%M:%d'))
     # endtime = time.mktime(time.strptime(endtime, '%Y-%m-%d %H:%M:%d'))
-    starttime1 = time.mktime(time.strptime(starttime, '%Y/%m/%d %H:%M:%S'))  # time.mktime(tupletime)接受时间元组并返回时间戳
-    endtime1 = time.mktime(time.strptime(endtime,'%Y/%m/%d %H:%M:%S'))  # time.strptime(str,fmt='%a %b %d %H:%M:%S %Y') 根据fmt的格式把一个时间字符串解析为时间元组。
-    work_days = int((endtime1 - starttime1) / (24 * 60 * 60))  # 毫秒转为天
-    day = work_days + 1  # 参考天数
+    starttime1 = time.mktime(time.strptime(starttime, '%Y/%m/%d %H:%M:%S'))  # time.mktime(tupletime)Accept time tuples and return timestamps
+    endtime1 = time.mktime(time.strptime(endtime,'%Y/%m/%d %H:%M:%S'))  # time.strptime(str,fmt='%a %b %d %H:%M:%S %Y') Parse a time string into a time tuple according to the format of fmt.
+    work_days = int((endtime1 - starttime1) / (24 * 60 * 60))  # Milliseconds to day
+    day = work_days + 1  # Reference days
     print('day', day)
-    # T_cluster = 0  # 时间簇初始为0
-    C, C_sum, U, C_z, C_d = Csum_ready.C_zd(starttime, endtime, df2, df1)  # 计算 C,C_sum, u
-    # 距离判断后的空间数组
+    # T_cluster = 0  # Time cluster is initially 0
+    C, C_sum, U, C_z, C_d = Csum_ready.C_zd(starttime, endtime, df2, df1)  # Calculate C, C_sum, u
+    # Distance space array after judgment
     circle = space_cluster(df1, R_max ,distance)
     print('C', C)
     # print('C_sum',C_sum)
@@ -278,7 +275,7 @@ if __name__ == '__main__':
     # print('U',U)
     print('circle', circle)
 
-    result_init = scan(C, circle, T_max, U, topN, day)  # 原始数据结果
+    result_init = scan(C, circle, T_max, U, topN, day)  # Raw data result
     print("result_init")
     print(result_init)
 
@@ -286,14 +283,14 @@ if __name__ == '__main__':
     result_init = result_init.tolist()
     # print('result_init',result_init)
 
-    fzcs = 999  # 仿真次数
-    c_re = np.zeros((1, day))  # 初始化
+    fzcs = 999  # Number of simulations
+    c_re = np.zeros((1, day))  # initialization
     c_re = c_re.astype(np.int)
-    np.random.seed(0)  # 随机相同v
+    np.random.seed(0)  # Random seed
 
-    # 存储最终结果
+    # Store the final result
     zzjg = []
-    # 取原始数据，比较并获取P值
+    # Take raw data, compare and get P value
     # for c in result_init:
     count = 0
     fz = []
@@ -301,15 +298,14 @@ if __name__ == '__main__':
     c = result_init[0]
     for s in range(fzcs):
         c_re = shuffle(C)
-        ## 计算期望值
-        c_re = np.array(c_re)  # list 转数组
-        c_re_sum = c_re.sum()  # C 求和
-        c_re_z = c_re.sum(axis=1)  # C_z 指定区域z上的全段病例数，1表示行
-        c_re_d = c_re.sum(axis=0)  # C_d 指定时间段d上的全段病例数全区病例数,0表示列
-        u_re_zd = np.multiply(c_re_d, np.mat(c_re_z).T) / c_re_sum  # 計算期望值
-        u_re_zd = np.array(u_re_zd)  # list 转数组
-        # print("蒙特卡洛")
-        # 蒙特卡洛扫描
+        ## Calculate the expected value
+        c_re = np.array(c_re)  # List to array
+        c_re_sum = c_re.sum()  # C Summation
+        c_re_z = c_re.sum(axis=1)  # C_z Specify the total number of cases on the area z, 1 indicates the line
+        c_re_d = c_re.sum(axis=0)  # C_d The total number of cases in the specified time period d is the number of cases in the whole district, and 0 is the column.
+        u_re_zd = np.multiply(c_re_d, np.mat(c_re_z).T) / c_re_sum  # Calculate the expected value
+        u_re_zd = np.array(u_re_zd)  # List to array
+        # Monte Carlo scan
         df_cir = scan(c_re, circle, T_max, u_re_zd, topN, day)
         df_cir = df_cir.iloc[0:1]
         df_cir = np.array(df_cir)
@@ -325,7 +321,7 @@ if __name__ == '__main__':
         else:
             fz.append(df_cir)
     zh = [0] * (len(fz) + 10)
-    # 存储最终结果
+    # Store the final result
     a = 0
     for x in result_init:
         zh[a] = x
@@ -348,7 +344,7 @@ if __name__ == '__main__':
         # print(zzjg)
         # print(c)
 
-    # 转化为dataFrame 方便查看
+    # Convert to dataFrame for easy viewing
     zzjg = pd.DataFrame(zzjg, columns=['C_zd', 'LGLR', 'T_cluster', 'center_xbid', 'r', 'u_zd', 'xbids', 'P-value'])
     print(zzjg)
     data_case = r"temp\syjg\smjg_0201_0207_7_10_time.xlsx"
