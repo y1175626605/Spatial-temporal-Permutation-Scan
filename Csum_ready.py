@@ -8,7 +8,7 @@ Created on Mon Apr  1 12:07:01 2019
 import pandas as pd
 import numpy as np
 import datetime
-# #定义文件路径
+# #Definition file path
 # data_src='./data/'
 # data_des='./temp/'
 
@@ -16,44 +16,44 @@ import datetime
 
 def C_zd(starttime, endtime,df2,df1):
 
-    # df1 = pd.DataFrame(data_dz)  # 读取地点文件
-    # df2 = pd.DataFrame(data)  # 读取case发生文件
+    # df1 = pd.DataFrame(data_dz)  # Read location file
+    # df2 = pd.DataFrame(data)  # Read case file
     #print('starttime',starttime)
     #print('endtime',endtime)
 
-    starttime = datetime.datetime.strptime(starttime, "%Y/%m/%d %H:%M:%S")  # 字符串转化为date形式
-    endtime = datetime.datetime.strptime(endtime, "%Y/%m/%d %H:%M:%S")  # 字符串转化为date形式
+    starttime = datetime.datetime.strptime(starttime, "%Y/%m/%d %H:%M:%S")  # String converted to date form
+    endtime = datetime.datetime.strptime(endtime, "%Y/%m/%d %H:%M:%S")  # String converted to date form
 
     #print(type(starttime))
 
-    df2 = df2[( pd.to_datetime(df2["date"]) >= starttime) & ( pd.to_datetime(df2["date"]) <= endtime)]  # 限制时间范围  pd.to_datetime转化为日期
+    df2 = df2[( pd.to_datetime(df2["date"]) >= starttime) & ( pd.to_datetime(df2["date"]) <= endtime)]  # Limit time range pd.to_datetime is converted to date
 
     print('df1',df1)
-    #  去重复,地点集
+    #  Deduplication, location set
     list1 = []
     d1 = list(df1["序号"])
-    d1 = set(d1)  # set去重
-    for c in d1:  # 将去重的数据集存入列表list1
+    d1 = set(d1)  # set Deduplication
+    for c in d1:  # Save the deduplicated data set to the list1
         list1.append(c)
-    list1.sort()    # 列表从小到大排序
+    list1.sort()    # List sorted from small to large
     #print('list1',list1)
 
-    #  去重复,时间集
+    #  Deduplication, time set
     list2 = []
     d2 = list(df2["date"])
     #print('d2',d2)
-    d2 = set(d2)  # 去重
+    d2 = set(d2)  # Deduplication
 
     for c in d2:
         list2.append(c)
 
-    def get_list(date):     # str 转 date 函数
+    def get_list(date):     # Str to date function
         return datetime.datetime.strptime(date, "%Y/%m/%d %H:%M")
 
-    list2 = sorted(list2, key=lambda date: get_list(date))   #  date 排序
+    list2 = sorted(list2, key=lambda date: get_list(date))   #  Date sort
     print('list2',list2)
 
-    # 二维数组 初始化
+    # Two-dimensional array initialization
     arr = []
     for i in range(len(d1)):
         arr.append([])
@@ -67,47 +67,47 @@ def C_zd(starttime, endtime,df2,df1):
    # print('a', a)
 
 
-    # 赋值
+    # Assignment
     for i in range(len(d1)):
         for j in range(len(d2)):
             #a = df2["num"].groupby(df2[(df2["z_id"] == list1[i]) & (df2["date"] == list2[j])]).sum()
-            list3 = datetime.datetime.strptime(list2[j], "%Y/%m/%d %H:%M")  # 字符串转化为date形式
+            list3 = datetime.datetime.strptime(list2[j], "%Y/%m/%d %H:%M")  # String converted to date form
             #print('list3',list3)
-            a = df2[(df2["z_id"] == list1[i]) & ((pd.to_datetime(df2["date"])) == list3 )]["num"].tolist()   # 选取满足条件的值
+            a = df2[(df2["z_id"] == list1[i]) & ((pd.to_datetime(df2["date"])) == list3 )]["num"].tolist()   # Select a value that satisfies the condition
             # if a != "":
-            if a == []:   #  如果没有数据，用0填充
+            if a == []:   # If there is no data, fill it with 0
                 arr[i][j] = 0
             else:
-                arr[i][j] = int(a[0])  # 有数据用 num 填充
+                arr[i][j] = int(a[0])  # Have data filled with num
     #print('arr',arr)
-    arr = np.array(arr)  # list 转数组
-    m, n = arr.shape  # m行n列
+    arr = np.array(arr)  # List to array
+    m, n = arr.shape  # m rows and n columns
 
-    # 返回C矩阵
+    # Return to C matrix
     C = arr
     cc = pd.DataFrame(C)
 
     #print(cc)
-    # C 求和
+    # C Summation
     C_sum = arr.sum()
    # print(C_sum)
-    # C_z 指定区域z上的全段病例数，1表示行
+    # C_z Specify the total number of events on the area z, 1 indicates the line
     C_z = arr.sum(axis=1)
    # print('np.mat(C_z).T',np.mat(C_z).T)
-   # m, n = arr.shape  # m行n列
+   # m, n = arr.shape  # m rows and n columns
    # k, m = np.size(C_z)
     #print('C_z',C_z)
 
-    # C_d 指定时间段d上的全段病例数全区病例数,0表示列
+    # C_d The total number of events in the specified time period d is the number of events in the whole zone, and 0 is the column.
     C_d = arr.sum(axis=0)
     #print('C_d',C_d)
     #print(len(C_d))
 
-    # 計算期望值
+    # Calculate the expected value
     u_zd = np.multiply(C_d,np.mat(C_z).T) / C_sum
     #print('u_zd',u_zd)
 
-    u_zd = np.array(u_zd)  # list 转数组
+    u_zd = np.array(u_zd)  # List to array
 
 
     return C,C_sum,u_zd,C_z,C_d
