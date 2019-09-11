@@ -1,12 +1,12 @@
-# 计算两个经纬度间的距离
+# Calculate the distance between two latitudes and longitudes
 
 import math
 from numpy import mat
 
-# 3.6378.137为地球半径，单位为千米；
+# 3.6378.137 is the radius of the Earth in kilometers;
 EARTH_REDIUS = 6378.137
 
-#定义圆周计算方法
+# Define the calculation method of the circumference
 def rad(d):
     #print('d',d)
     #print(type(d))
@@ -14,8 +14,8 @@ def rad(d):
     #print(rad)
     return rad
 
-#定义两个经纬度之间的距离（采用谷歌地图距离计算方法）
-def getDistance(lat1, lng1, lat2, lng2):      #  Lat1 Lung1 表示A点经纬度，Lat2 Lung2 表示B点经纬度
+# Define the distance between two latitudes and longitudes (using the Google Map Distance calculation method)
+def getDistance(lat1, lng1, lat2, lng2):      #  Lat1 Lung1 represents point A latitude and longitude, Lat2 Lung2 represents point B latitude and longitude
     radLat1 = rad(lat1)
     radLat2 = rad(lat2)
     a = radLat1 - radLat2
@@ -25,7 +25,7 @@ def getDistance(lat1, lng1, lat2, lng2):      #  Lat1 Lung1 表示A点经纬度�
     s = s * EARTH_REDIUS
     return s
 
-#距离矩阵L生成函数
+#Distance matrix L generation function
 # def L_Distance(D,data_dz):
 #     D_data = data_dz
 #     L = []
